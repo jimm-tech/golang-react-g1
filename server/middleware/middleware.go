@@ -68,11 +68,15 @@ func init() {
 		log.Fatal(err)
 	}
 	json.Unmarshal(byteValues, &admin)
-	_, err = usersCollection.InsertOne(context.Background(), admin)
-	if err != nil {
-		log.Fatal(err)
+	filter := bson.M{"type": bson.M{"$eq": admin.Type}}
+	count, _ := usersCollection.CountDocuments(context.Background(), filter)
+	if count < 1 {
+		_, err = usersCollection.InsertOne(context.Background(), admin)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("MNM Admin created!")
 	}
-	fmt.Println("MNM Admin created!")
 }
 
 // GetAllUsers get all the users route
