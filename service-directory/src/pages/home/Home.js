@@ -58,7 +58,7 @@ class Home extends React.Component {
             axios
                 .put(window.$endpoint + '/api/logout', { _id }, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
                 .then(res => {
-                    if (res.data) {
+                    if (res.data.success) {
                         sessionStorage.clear()
                         this.goToWelcome()
                     }

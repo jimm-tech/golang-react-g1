@@ -48,7 +48,21 @@ class MyProfile extends Component {
     }
 
     cancelProfilePictureUpdate = () => this.setState({ image: undefined, profilePictureChanged: false })
-    deleteAccount = () => { }
+    deleteAccount = () => {
+        let _id = sessionStorage.getItem('_id')
+        if (_id) {
+            let deleted = true
+            axios
+                .put(window.$endpoint + '/api/deleteuser', { _id, deleted }, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+                .then(res => {
+                    if (res.data) {
+                        setTimeout(() => {
+                            console.log(res.data)
+                        }, 2000)
+                    }
+                })
+        }
+    }
 
     saveProfilePictureUpdate = () => {
         let _id = sessionStorage.getItem('_id')

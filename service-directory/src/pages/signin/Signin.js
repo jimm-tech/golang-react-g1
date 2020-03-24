@@ -20,8 +20,7 @@ class Signin extends React.Component {
       email: '',
       password: '',
       formStyle: this.props.location.state ? this.props.location.state.formStyle : '',
-      messageHeader: this.props.location.state ? this.props.location.state.messageHeader : '',
-      messageContent: this.props.location.state ? this.props.location.state.messageContent : ''
+      messageHeader: this.props.location.state ? this.props.location.state.messageHeader : ''
     }
   }
 
@@ -31,8 +30,7 @@ class Signin extends React.Component {
     email: '',
     password: '',
     formStyle: '',
-    messageHeader: '',
-    messageContent: ''
+    messageHeader: ''
   })
 
   onChange = event => this.setState({ [event.target.name]: event.target.value, formStyle: '' })
@@ -54,16 +52,15 @@ class Signin extends React.Component {
       axios
         .post(window.$endpoint + '/api/login', { email, password }, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
         .then(res => {
-          if (res.data._id === '000000000000000000000000') {
-            this.setState({ formStyle: 'error', messageHeader: 'Invalid Credential', messageContent: 'Could not find your MNM Account.' })
-          }
-          else {
-            setTimeout(() => {
+          setTimeout(() => {
+            if (res.data.success) {
               sessionStorage.setItem('isloggedin', true)
               this.setState({ formStyle: '' })
-              this.goToHome(res.data)
-            }, 2000)
-          }
+              this.goToHome(res.data.userdata)
+            } else {
+              this.setState({ formStyle: 'error', messageHeader: res.data.message })
+            }
+          }, 2000)
         })
     }
   }
@@ -80,7 +77,7 @@ class Signin extends React.Component {
         <h2>Sign In</h2>
         <p>to continue to Service Directory</p>
         <Form className={this.state.formStyle}>
-          <Message error header={this.state.messageHeader} content={this.state.messageContent} />
+          <Message error header={this.state.messageHeader} />
           <Form.Input
             label='Email'
             required

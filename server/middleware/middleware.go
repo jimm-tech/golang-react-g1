@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 
 	"../models"
 
@@ -65,7 +66,7 @@ func init() {
 	var admin models.User
 	byteValues, err := ioutil.ReadFile("admin_data.json")
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Error: ", err)
 	}
 	json.Unmarshal(byteValues, &admin)
 	filter := bson.M{"type": bson.M{"$eq": admin.Type}}
@@ -73,9 +74,10 @@ func init() {
 	if count < 1 {
 		_, err = usersCollection.InsertOne(context.Background(), admin)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println("Error: ", err)
+		} else {
+			fmt.Println("MNM Admin created!")
 		}
-		fmt.Println("MNM Admin created!")
 	}
 }
 
@@ -220,29 +222,24 @@ func UpdatePassword(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(updatePassword(userPassword))
 }
 
+// DeleteUser update user's delete status route
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Context-Type", "application/x-www-form-urlencoded")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "PUT")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	var user models.User
+	_ = json.NewDecoder(r.Body).Decode(&user)
+	json.NewEncoder(w).Encode(deleteUser(user))
+}
+
 // get all users from the DB and return it
 func getAllUsers() []primitive.M {
 	cur, err := usersCollection.Find(context.Background(), bson.D{{}})
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Error: ", err)
 	}
-
-	var results []primitive.M
-	for cur.Next(context.Background()) {
-		var result bson.M
-		e := cur.Decode(&result)
-		if e != nil {
-			log.Fatal(e)
-		}
-		results = append(results, result)
-	}
-
-	if err := cur.Err(); err != nil {
-		log.Fatal(err)
-	}
-
-	cur.Close(context.Background())
-	return results
+	return selectAllQuery(cur)
 }
 
 // get all customers from the DB and return it
@@ -261,25 +258,9 @@ func getAllCustomers() []primitive.M {
 	cur, err := usersCollection.Find(context.Background(),
 		findFilter, options.Find().SetProjection(projection))
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Error: ", err)
 	}
-
-	var results []primitive.M
-	for cur.Next(context.Background()) {
-		var result bson.M
-		e := cur.Decode(&result)
-		if e != nil {
-			log.Fatal(e)
-		}
-		results = append(results, result)
-	}
-
-	if err := cur.Err(); err != nil {
-		log.Fatal(err)
-	}
-
-	cur.Close(context.Background())
-	return results
+	return selectAllQuery(cur)
 }
 
 // get all service providers from the DB and return it
@@ -298,30 +279,13 @@ func getAllServiceProviders() []primitive.M {
 	cur, err := usersCollection.Find(context.Background(),
 		findFilter, options.Find().SetProjection(projection))
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Error: ", err)
 	}
-
-	var results []primitive.M
-	for cur.Next(context.Background()) {
-		var result bson.M
-		e := cur.Decode(&result)
-		if e != nil {
-			log.Fatal(e)
-		}
-		results = append(results, result)
-	}
-
-	if err := cur.Err(); err != nil {
-		log.Fatal(err)
-	}
-
-	cur.Close(context.Background())
-	return results
+	return selectAllQuery(cur)
 }
 
 // get all services from the DB and return it
 func getAllServices() []primitive.M {
-
 	lookup := bson.D{
 		primitive.E{Key: "$lookup", Value: bson.D{
 			primitive.E{Key: "from", Value: "users"},
@@ -330,36 +294,18 @@ func getAllServices() []primitive.M {
 			primitive.E{Key: "as", Value: "service_provider"},
 		}},
 	}
-
 	unwind := bson.D{
 		primitive.E{Key: "$unwind", Value: bson.D{
 			primitive.E{Key: "path", Value: "$userid"},
 			primitive.E{Key: "preserveNullAndEmptyArrays", Value: false},
 		}},
 	}
-
 	cur, err := servicesCollection.Aggregate(context.Background(),
 		mongo.Pipeline{lookup, unwind})
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Error: ", err)
 	}
-
-	var results []primitive.M
-	for cur.Next(context.Background()) {
-		var result bson.M
-		e := cur.Decode(&result)
-		if e != nil {
-			log.Fatal(e)
-		}
-		results = append(results, result)
-	}
-
-	if err := cur.Err(); err != nil {
-		log.Fatal(err)
-	}
-
-	cur.Close(context.Background())
-	return results
+	return selectAllQuery(cur)
 }
 
 // get all services by userid from the DB and return it
@@ -367,25 +313,9 @@ func getAllMyServices(service models.Service) []primitive.M {
 	findFilter := bson.M{"userid": bson.M{"$eq": service.UserID}}
 	cur, err := servicesCollection.Find(context.Background(), findFilter)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Error: ", err)
 	}
-
-	var results []primitive.M
-	for cur.Next(context.Background()) {
-		var result bson.M
-		e := cur.Decode(&result)
-		if e != nil {
-			log.Fatal(e)
-		}
-		results = append(results, result)
-	}
-
-	if err := cur.Err(); err != nil {
-		log.Fatal(err)
-	}
-
-	cur.Close(context.Background())
-	return results
+	return selectAllQuery(cur)
 }
 
 // get all other services from the DB and return it
@@ -395,7 +325,6 @@ func getAllOtherServices(service models.Service) []primitive.M {
 			primitive.E{Key: "userid", Value: bson.M{"$ne": service.UserID}},
 		}},
 	}
-
 	lookup := bson.D{
 		primitive.E{Key: "$lookup", Value: bson.D{
 			primitive.E{Key: "from", Value: "users"},
@@ -404,40 +333,22 @@ func getAllOtherServices(service models.Service) []primitive.M {
 			primitive.E{Key: "as", Value: "service_provider"},
 		}},
 	}
-
 	unwind := bson.D{
 		primitive.E{Key: "$unwind", Value: bson.D{
 			primitive.E{Key: "path", Value: "$userid"},
 			primitive.E{Key: "preserveNullAndEmptyArrays", Value: false},
 		}},
 	}
-
 	cur, err := servicesCollection.Aggregate(context.Background(),
 		mongo.Pipeline{lookup, unwind, filter})
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Error: ", err)
 	}
-
-	var results []primitive.M
-	for cur.Next(context.Background()) {
-		var result bson.M
-		e := cur.Decode(&result)
-		if e != nil {
-			log.Fatal(e)
-		}
-		results = append(results, result)
-	}
-
-	if err := cur.Err(); err != nil {
-		log.Fatal(err)
-	}
-
-	cur.Close(context.Background())
-	return results
+	return selectAllQuery(cur)
 }
 
 // Login user in the DB
-func loginUser(credential models.UserCredential) models.User {
+func loginUser(credential models.UserCredential) models.ServerResponse {
 	projection := bson.D{
 		primitive.E{Key: "_id", Value: 1},
 		primitive.E{Key: "firstname", Value: 1},
@@ -448,169 +359,166 @@ func loginUser(credential models.UserCredential) models.User {
 		primitive.E{Key: "deleted", Value: 1},
 		primitive.E{Key: "email", Value: 1},
 	}
-	findFilter := bson.M{
+	filter := bson.M{
 		"email":    credential.Email,
 		"password": credential.Password,
-		"deleted":  false,
-		"status":   false,
 	}
-	var result models.User
-	err := usersCollection.FindOne(context.Background(),
-		findFilter, options.FindOne().SetProjection(projection)).Decode(&result)
-
+	var user models.User
+	err := usersCollection.FindOne(context.Background(), filter,
+		options.FindOne().SetProjection(projection)).Decode(&user)
+	var response models.ServerResponse
 	if err != nil {
-		fmt.Println(err)
-		return result
+		fmt.Println("Error: ", err)
+		response.Success = false
+		response.Message = "Invalid MNM Account credentials."
+		return response
 	}
-
-	updateFilter := bson.M{"_id": bson.M{"$eq": result.ID}}
-	update := bson.M{"$set": bson.M{"status": true}}
-	updateResult, err := usersCollection.UpdateOne(context.TODO(), updateFilter, update)
-
-	if err != nil {
-		fmt.Println(err)
-		return result
+	if user.Deleted {
+		response.Success = false
+		response.Message = "MNM Account is deactivated."
 	}
-
-	fmt.Printf("User logged in: %v (%v)\n", result, updateResult.ModifiedCount)
-	return result
+	if user.Status {
+		response.Success = false
+		response.Message = "MNM Account is currently logged in."
+	}
+	if !user.Deleted && !user.Status {
+		_ = updateOneQuery(usersCollection, bson.M{"_id": bson.M{"$eq": user.ID}},
+			bson.M{"$set": bson.M{"status": true}})
+		fmt.Println("User logged in: ", user.ID)
+		response.Success = true
+		response.UserData = user
+	}
+	return response
 }
 
 // Logout user in the DB
-func logoutUser(user models.User) bool {
+func logoutUser(user models.User) models.ServerResponse {
 	filter := bson.M{"_id": bson.M{"$eq": user.ID}}
-	var result models.User
-	err := usersCollection.FindOne(context.Background(), filter).Decode(&result)
-
-	if err != nil {
-		fmt.Println(err)
-		return false
-	}
-
 	update := bson.M{"$set": bson.M{"status": false}}
-	updateResult, err := usersCollection.UpdateOne(context.TODO(), filter, update)
-
-	if err != nil {
-		fmt.Println(err)
-		return false
+	response := updateOneQuery(usersCollection, filter, update)
+	if response.Success {
+		var result models.User
+		_ = usersCollection.FindOne(context.Background(), filter).Decode(&result)
+		fmt.Println("User logged out: ", result.ID)
+		response.Data = strconv.FormatBool(result.Status)
 	}
+	return response
+}
 
-	fmt.Printf("User logged out: %v (%v)\n", result.ID, updateResult.ModifiedCount)
-	return true
+// Update user's delete status in the DB
+func deleteUser(user models.User) models.ServerResponse {
+	filter := bson.M{"_id": bson.M{"$eq": user.ID}}
+	update := bson.M{"$set": bson.M{"deleted": user.Deleted}}
+	response := updateOneQuery(usersCollection, filter, update)
+	if response.Success {
+		var result models.User
+		_ = usersCollection.FindOne(context.Background(), filter).Decode(&result)
+		fmt.Println("User deleted: ", result.ID)
+		response.Data = strconv.FormatBool(result.Deleted)
+	}
+	return response
 }
 
 // Update user's password in the DB
 func updatePassword(userPassword models.UserPassword) models.ServerResponse {
-	var response models.ServerResponse
-
 	filter := bson.M{"_id": bson.M{"$eq": userPassword.UserID}}
-	update := bson.M{"$set": bson.M{"password": userPassword.Old}}
-
-	updateResult, err := usersCollection.UpdateOne(context.TODO(), filter, update)
-
-	if err != nil {
-		fmt.Println(err)
-
-		response.Success = false
-		response.Message = "Something went wrong."
-
-		return response
-	}
-
 	var result models.User
 	_ = usersCollection.FindOne(context.Background(), filter).Decode(&result)
-
-	fmt.Printf("User profile picture updated: %v (%v)\n", result.ID, updateResult.ModifiedCount)
-
-	response.Success = true
-	response.Message = "Successfully updated."
-	response.Data = result.Image
-
+	if result.Password == userPassword.Old {
+		update := bson.M{"$set": bson.M{"password": userPassword.New}}
+		response := updateOneQuery(usersCollection, filter, update)
+		if response.Success {
+			var result models.User
+			_ = usersCollection.FindOne(context.Background(), filter).Decode(&result)
+			fmt.Println("User's password updated: ", result.ID)
+			response.Data = strconv.FormatBool(true)
+		}
+		return response
+	}
+	var response models.ServerResponse
+	response.Success = false
+	response.Message = "Entered incorrect password."
 	return response
 }
 
 // Update user's profile picture in the DB
 func updateProfilePicture(user models.User) models.ServerResponse {
-	var response models.ServerResponse
-
 	filter := bson.M{"_id": bson.M{"$eq": user.ID}}
 	update := bson.M{"$set": bson.M{"image": user.Image}}
-
-	updateResult, err := usersCollection.UpdateOne(context.TODO(), filter, update)
-
-	if err != nil {
-		fmt.Println(err)
-
-		response.Success = false
-		response.Message = "Something went wrong."
-
-		return response
+	response := updateOneQuery(usersCollection, filter, update)
+	if response.Success {
+		var result models.User
+		_ = usersCollection.FindOne(context.Background(), filter).Decode(&result)
+		fmt.Println("User's profile picture updated: ", result.ID)
+		response.Data = result.Image
 	}
-
-	var result models.User
-	_ = usersCollection.FindOne(context.Background(), filter).Decode(&result)
-
-	fmt.Printf("User profile picture updated: %v (%v)\n", result.ID, updateResult.ModifiedCount)
-
-	response.Success = true
-	response.Message = "Successfully updated."
-	response.Data = result.Image
-
 	return response
 }
 
 // Update user's personal information in the DB
 func updatePersonalInformation(user models.User) models.ServerResponse {
-	var response models.ServerResponse
-
 	filter := bson.M{"_id": bson.M{"$eq": user.ID}}
 	update := bson.M{"$set": bson.M{
 		"email":     user.Email,
 		"firstname": user.FirstName,
 		"lastname":  user.LastName,
 	}}
-
-	updateResult, err := usersCollection.UpdateOne(context.TODO(), filter, update)
-
-	if err != nil {
-		fmt.Println(err)
-
-		response.Success = false
-		response.Message = "Something went wrong."
-
-		return response
+	response := updateOneQuery(usersCollection, filter, update)
+	if response.Success {
+		var result models.User
+		_ = usersCollection.FindOne(context.Background(), filter).Decode(&result)
+		fmt.Println("User's personal information updated: ", result.ID)
+		response.UserData = result
 	}
-
-	var result models.User
-	_ = usersCollection.FindOne(context.Background(), filter).Decode(&result)
-
-	fmt.Printf("User personal information updated: %v (%v)\n", result.ID, updateResult.ModifiedCount)
-
-	response.Success = true
-	response.Message = "Successfully updated."
-	response.UserData = result
-
 	return response
 }
 
 // Create one user in the DB
 func createUser(user models.User) {
 	insertResult, err := usersCollection.InsertOne(context.Background(), user)
-
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Error: ", err)
 	}
-
 	fmt.Println("User created: ", insertResult.InsertedID)
 }
 
 // Create one service in the DB
 func createService(service models.Service) {
 	insertResult, err := servicesCollection.InsertOne(context.Background(), service)
-
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("Error: ", err)
 	}
-
 	fmt.Println("Service created: ", insertResult.InsertedID)
+}
+
+//
+func selectAllQuery(cur *mongo.Cursor) []primitive.M {
+	var results []primitive.M
+	for cur.Next(context.Background()) {
+		var result bson.M
+		e := cur.Decode(&result)
+		if e != nil {
+			fmt.Println(e)
+		}
+		results = append(results, result)
+	}
+	if err := cur.Err(); err != nil {
+		fmt.Println("Error: ", err)
+	}
+	cur.Close(context.Background())
+	return results
+}
+
+func updateOneQuery(collection *mongo.Collection, filter bson.M, update bson.M) models.ServerResponse {
+	_, err := collection.UpdateOne(context.TODO(), filter, update)
+	var response models.ServerResponse
+	if err != nil {
+		fmt.Println("Error: ", err)
+		response.Success = false
+		response.Message = "Something went wrong."
+		return response
+	}
+	response.Success = true
+	response.Message = "Successfully updated."
+	return response
 }

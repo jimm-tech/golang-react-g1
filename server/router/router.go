@@ -10,6 +10,7 @@ func Router() *mux.Router {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/api/user", middleware.CreateUser).Methods("POST", "OPTIONS")
+	router.HandleFunc("/api/deleteuser", middleware.DeleteUser).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/api/service", middleware.CreateService).Methods("POST", "OPTIONS")
 	router.HandleFunc("/api/login", middleware.LoginUser).Methods("POST", "OPTIONS")
 	router.HandleFunc("/api/logout", middleware.LogoutUser).Methods("PUT", "OPTIONS")

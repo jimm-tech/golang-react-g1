@@ -57,7 +57,7 @@ class Register extends React.Component {
   render() {
 
     if (this.state.redirect && this.state.isSuccess === true) {
-      return <Redirect to={{ pathname: this.state.redirect, state: { formStyle: 'success', messageHeader: 'Account Created', messageContent: 'MNM Account successfully created. Please sign in to continue.' } }} />
+      return <Redirect to={{ pathname: this.state.redirect, state: { formStyle: 'success', messageHeader: 'MNM Account successfully created.' } }} />
     }
 
     if (this.state.redirect) {
