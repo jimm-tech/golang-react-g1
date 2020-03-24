@@ -1,0 +1,28 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/service-directory/node_modules
+/service-directory/.pnp
+/service-directory/.pnp.js
+
+# testing
+/service-directory/coverage
+
+# production
+/service-directory/build
+
+# misc
+/service-directory/.DS_Store
+/service-directory/.env.local
+/service-directory/.env.development.local
+/service-directory/.env.test.local
+/service-directory/.env.production.local
+/server/.DS_Store
+/server/.env.local
+/server/.env.development.local
+/server/.env.test.local
+/server/.env.production.local
+
+/service-directory/npm-debug.log*
+/service-directory/yarn-debug.log*
+/service-directory/yarn-error.log*
