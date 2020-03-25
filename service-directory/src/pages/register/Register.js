@@ -18,6 +18,8 @@ class Register extends React.Component {
       isSuccess: false,
       redirect: null,
       email: '',
+      domain: 'mnm',
+      extension: 'com',
       password: '',
       firstname: '',
       lastname: '',
@@ -28,18 +30,27 @@ class Register extends React.Component {
   clearDetails = () => this.setState({
     redirect: null,
     email: '',
+    domain: '',
+    extension: '',
     password: '',
     firstname: '',
     lastname: '',
     type: this.props.name,
   })
 
-  onChange = event => this.setState({ [event.target.name]: event.target.value })
+  onChange = event => {
+    if (event.target.name === 'extension' || event.target.name === 'domain') {
+      this.setState({ [event.target.name]: event.target.value.replace(/[^a-z -]/gi, "") })
+    } else {
+      this.setState({ [event.target.name]: event.target.value.replace(/[^\w.\s]/gi, "") })
+    }
+  }
   goToWelcome = () => this.setState({ redirect: '/' })
   goToSignin = () => this.setState({ redirect: '/signin' })
 
   createAccount = () => {
-    let { firstname, lastname, email, password, type } = this.state
+    let { firstname, lastname, email, domain, extension, password, type } = this.state
+    email = email + '@' + domain + '.' + extension
     if (firstname && lastname && email && password) {
       this.setState({ formStyle: 'loading' })
       axios
@@ -88,7 +99,10 @@ class Register extends React.Component {
               value={this.state.lastname}
               placeholder='Last name' />
           </Form.Group>
-          <Form.Group widths='equal'>
+          <Label style={{ marginBottom: '1em' }}
+            content={'Email: ' + this.state.email + '@' + this.state.domain + '.' + this.state.extension}
+            icon='mail' />
+          <Form.Group>
             <Form.Input
               label='Email'
               required
@@ -96,7 +110,34 @@ class Register extends React.Component {
               name='email'
               onChange={this.onChange}
               value={this.state.email}
-              placeholder='Email' />
+              placeholder='Email'
+              width={10} />
+            <Form.Field style={{ paddingTop: '2em', paddingLeft: '0', paddingRight: '0' }}>
+              <Label style={{ backgroundColor: '#ffffff', padding: '0' }} size='huge' content='@' />
+            </Form.Field>
+            <Form.Input style={{ paddingTop: '1.65em' }}
+              required
+              type='text'
+              name='domain'
+              onChange={this.onChange}
+              value={this.state.domain}
+              placeholder='Domain'
+              defaultValue={this.state.domain}
+              width={3} />
+            <Form.Field style={{ paddingTop: '2em', paddingLeft: '0', paddingRight: '0' }}>
+              <Label style={{ backgroundColor: '#ffffff', padding: '0' }} size='huge' content='.' />
+            </Form.Field>
+            <Form.Input style={{ paddingTop: '1.65em' }}
+              required
+              type='text'
+              name='extension'
+              onChange={this.onChange}
+              value={this.state.extension}
+              placeholder='Ext'
+              defaultValue={this.state.extension}
+              width={3} />
+          </Form.Group>
+          <Form.Group widths='equal'>
             <Form.Input
               label='Password'
               required
@@ -108,7 +149,7 @@ class Register extends React.Component {
           </Form.Group>
           <Form.Group widths='equal'>
             <Form.Field >
-              <Label size='large' as='a' basic onClick={this.goToSignin} style={{ fontWeight: 'normal', marginTop: '0.3em' }}>
+              <Label size='large' as='a' color='blue' onClick={this.goToSignin} style={{ fontWeight: 'normal', marginTop: '0.3em' }}>
                 Sign In Instead
               </Label>
             </Form.Field>
