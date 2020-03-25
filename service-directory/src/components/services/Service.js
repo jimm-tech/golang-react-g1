@@ -40,16 +40,11 @@ class Service extends Component {
         const { loading } = this.state
         const { cards, serviceType } = this.props
 
-        let cardCount = 4
-        if (serviceType === 'My Services') {
-            cardCount = 3
-        }
-
         return (
             <Fragment>
                 {
                     (cards.length) > 0 ?
-                        <Card.Group doubling itemsPerRow={cardCount} stackable>
+                        <Card.Group doubling itemsPerRow={4} stackable>
                             {
                                 _.map(cards, (card) => (
                                     <Card key={card._id}>

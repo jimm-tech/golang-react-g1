@@ -125,7 +125,7 @@ func GetAllServices(w http.ResponseWriter, r *http.Request) {
 func GetAllMyServices(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Context-Type", "application/x-www-form-urlencoded")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET")
+	w.Header().Set("Access-Control-Allow-Methods", "POST")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	var service models.Service
 	_ = json.NewDecoder(r.Body).Decode(&service)
@@ -136,7 +136,7 @@ func GetAllMyServices(w http.ResponseWriter, r *http.Request) {
 func GetAllOtherServices(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Context-Type", "application/x-www-form-urlencoded")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET")
+	w.Header().Set("Access-Control-Allow-Methods", "POST")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	var otherservices models.Service
 	_ = json.NewDecoder(r.Body).Decode(&otherservices)

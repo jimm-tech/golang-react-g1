@@ -1,8 +1,5 @@
 import React, { Component } from 'react'
-import {
-    Container, Header, Button, Grid, Card, Feed, Divider, Segment,
-    Popup, Modal, Icon, Form
-} from 'semantic-ui-react'
+import { Container, Header, Button, Grid, Divider, Segment, Popup, Modal, Icon, Form, Loader } from 'semantic-ui-react'
 import CurrencyFormat from 'react-currency-format'
 import axios from 'axios'
 import Service from './Service'
@@ -17,11 +14,15 @@ class Services extends Component {
         this.showAddService = this.showAddService.bind(this)
         this.closeAddService = this.closeAddService.bind(this)
         this.onChange = this.onChange.bind(this)
+        this.showLoading = this.showLoading.bind(this)
+        this.closeLoading = this.closeLoading.bind(this)
+        this.clearDetails = this.clearDetails.bind(this)
         this.state = {
             services: [],
             myservices: [],
             otherservices: [],
             openAddService: false,
+            openLoading: false,
             savingService: false,
             formStyle: '',
             title: '',
@@ -51,7 +52,7 @@ class Services extends Component {
         let userid = sessionStorage.getItem('_id')
         if (userid) {
             axios
-                .get(window.$endpoint + '/api/myservices', { userid }, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+                .post(window.$endpoint + '/api/myservices', { userid }, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
                 .then(res => {
                     if (res.data) {
                         this.setState({ myservices: res.data })
@@ -64,7 +65,7 @@ class Services extends Component {
         let userid = sessionStorage.getItem('_id')
         if (userid) {
             axios
-                .get(window.$endpoint + '/api/otherservices', { userid }, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+                .post(window.$endpoint + '/api/otherservices', { userid }, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
                 .then(res => {
                     if (res.data) {
                         this.setState({ otherservices: res.data })
@@ -73,11 +74,22 @@ class Services extends Component {
         }
     }
 
+    clearDetails = () => this.setState({
+        title: '',
+        description: '',
+        price: '',
+        image: ''
+    })
+
+    closeLoading = () => this.setState({ openLoading: false })
+    showLoading = () => this.setState({ openLoading: true })
     onChange = event => this.setState({ [event.target.name]: event.target.value })
     showAddService = () => this.setState({ openAddService: true })
     closeAddService = () => this.setState({ openAddService: false })
     handlePriceChange = (e, { name, value }) => this.setState({ [name]: value })
     createService = () => {
+        this.closeAddService()
+        this.showLoading()
         let userid = sessionStorage.getItem('_id')
         if (userid) {
             this.setState({ formStyle: 'loading', savingService: true })
@@ -88,7 +100,9 @@ class Services extends Component {
                 .then(res => {
                     setTimeout(() => {
                         if (res.data.success) {
-                            this.closeAddService()
+                            this.clearDetails()
+                            this.closeLoading()
+                            this.getAllMyServices()
                         }
                     }, 2000)
                 })
@@ -96,7 +110,7 @@ class Services extends Component {
     }
 
     render() {
-        const { openAddService } = this.state
+        const { openAddService, openLoading } = this.state
 
         let type = sessionStorage.getItem('type') !== null ? sessionStorage.getItem('type').toLowerCase() : ''
         if (type === 'admin') {
@@ -181,6 +195,11 @@ class Services extends Component {
                                 <Icon name='checkmark' />Create
                             </Button>
                         </Modal.Actions>
+                    </Modal>
+                    <Modal dimmer='blurring' basic open={openLoading} closeOnEscape={false} closeOnDimmerClick={false} onClose={this.closeLoading} >
+                        <Modal.Content>
+                            <Loader size='large' />
+                        </Modal.Content>
                     </Modal>
                 </Container >
             )
