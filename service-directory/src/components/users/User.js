@@ -1,7 +1,8 @@
 import React, { Component, Fragment } from 'react'
 import _ from 'lodash'
-import { Placeholder, Button, Card, Image, Icon, Container, Label, Rating, Modal, Item, Grid } from 'semantic-ui-react'
+import { Placeholder, Button, Card, Image, Icon, Container, Label, Rating, Modal, Item, Grid, Loader } from 'semantic-ui-react'
 import NoDisplay from '../NoDisplay'
+import axios from 'axios'
 
 class User extends Component {
 
@@ -9,9 +10,18 @@ class User extends Component {
 
     constructor(props) {
         super(props)
+        this.show = this.show.bind(this)
+        this.close = this.close.bind(this)
+        this.showLoading = this.showLoading.bind(this)
+        this.closeLoading = this.closeLoading.bind(this)
+        this.deactivateAccount = this.deactivateAccount.bind(this)
         this.state = {
             loading: true,
             open: false,
+            deactivateText: 'Deactivate',
+            openLoading: false,
+            selectedUserID: '',
+            selectedUserType: '',
             selectedUserImage: '',
             selectedUserFirstname: '',
             selectedUserLastname: '',
@@ -20,9 +30,17 @@ class User extends Component {
         }
     }
 
+    showLoading = () => this.setState({ openLoading: true })
     show = (card) => () => {
+        if (card.deleted) {
+            this.setState({ deactivateText: 'Activate' })
+        } else {
+            this.setState({ deactivateText: 'Deactivate' })
+        }
         this.setState({
             open: true,
+            selectedUserID: card._id,
+            selectedUserType: card.type,
             selectedUserImage: card.image,
             selectedUserFirstname: card.firstname,
             selectedUserLastname: card.lastname,
@@ -30,7 +48,29 @@ class User extends Component {
             selectedUserRating: card.rating
         })
     }
+    closeLoading = () => this.setState({ openLoading: false })
     close = () => this.setState({ open: false })
+    deactivateAccount = () => {
+        this.close()
+        this.showLoading()
+        let _id = this.state.selectedUserID
+        if (_id) {
+            let deleted = false
+            if (this.state.deactivateText === 'Deactivate') {
+                deleted = true
+            }
+            axios
+                .put(window.$endpoint + '/api/deleteuser', { _id, deleted }, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+                .then(res => {
+                    if (res.data) {
+                        setTimeout(() => {
+                            this.closeLoading()
+                            this.props.action()
+                        }, 2000)
+                    }
+                })
+        }
+    }
 
     componentDidMount() {
         this._isMounted = true
@@ -46,7 +86,7 @@ class User extends Component {
     }
 
     render() {
-        const { loading, open } = this.state
+        const { loading, open, openLoading } = this.state
         const { cards, userType } = this.props
 
         return (
@@ -60,7 +100,16 @@ class User extends Component {
                                         {
                                             loading ? null : (
                                                 <Container textAlign='center' style={{ padding: '0.5em' }}>
-                                                    {(card.image) !== '' ? <Image fluid circular src={card.image} /> : <Icon size='massive' circular name='user' />}
+                                                    {
+                                                        card.deleted === true ?
+                                                            <Label attached='top left' as='a' color='red' tag>
+                                                                DEACTIVATED
+                                                        </Label> : null
+                                                    }
+                                                    {
+                                                        (card.image) !== '' ?
+                                                            <Image disabled={card.deleted} fluid rounded src={card.image} /> : <Icon size='massive' circular name='user' />
+                                                    }
                                                 </Container>
                                             )
                                         }
@@ -80,8 +129,10 @@ class User extends Component {
                                                         <Fragment>
                                                             <Card.Header content={card.firstname + ' ' + card.lastname} />
                                                             <Card.Meta>
-                                                                {card.status === true ? <div><Label circular color='green' empty /> Online</div> :
-                                                                    <div><Label circular color='red' empty /> Not online</div>}
+                                                                {
+                                                                    card.status === true ? <div><Label circular color='green' empty /> Online</div> :
+                                                                        <div><Label circular color='red' empty /> Not online</div>
+                                                                }
                                                             </Card.Meta>
                                                             <Card.Description content={card.email} />
                                                         </Fragment>
@@ -97,19 +148,41 @@ class User extends Component {
                                         </Card.Content>
                                         <Card.Content extra>
                                             {
-                                                (card.status) === true ?
-                                                    <Button disabled animated='vertical' fluid >
-                                                        <Button.Content hidden>Deactivate Account</Button.Content>
-                                                        <Button.Content visible>
-                                                            <Icon name='trash alternate' />
-                                                        </Button.Content>
-                                                    </Button> :
-                                                    <Button disabled={loading} animated='vertical' fluid onClick={this.show(card)}>
-                                                        <Button.Content hidden>Deactivate Account</Button.Content>
-                                                        <Button.Content visible>
-                                                            <Icon name='trash alternate' />
-                                                        </Button.Content>
-                                                    </Button>
+                                                (card.deleted) === true ?
+                                                    <div>
+                                                        {
+                                                            (card.status) === true ?
+                                                                <Button disabled animated='vertical' fluid >
+                                                                    <Button.Content hidden>Activate Account</Button.Content>
+                                                                    <Button.Content visible>
+                                                                        <Icon name='lock open' />
+                                                                    </Button.Content>
+                                                                </Button> :
+                                                                <Button disabled={loading} animated='vertical' fluid onClick={this.show(card)}>
+                                                                    <Button.Content hidden>Activate Account</Button.Content>
+                                                                    <Button.Content visible>
+                                                                        <Icon name='lock open' />
+                                                                    </Button.Content>
+                                                                </Button>
+                                                        }
+                                                    </div> :
+                                                    <div>
+                                                        {
+                                                            (card.status) === true ?
+                                                                <Button disabled animated='vertical' fluid >
+                                                                    <Button.Content hidden>Deactivate Account</Button.Content>
+                                                                    <Button.Content visible>
+                                                                        <Icon name='lock' />
+                                                                    </Button.Content>
+                                                                </Button> :
+                                                                <Button disabled={loading} animated='vertical' fluid onClick={this.show(card)}>
+                                                                    <Button.Content hidden>Deactivate Account</Button.Content>
+                                                                    <Button.Content visible>
+                                                                        <Icon name='lock' />
+                                                                    </Button.Content>
+                                                                </Button>
+                                                        }
+                                                    </div>
                                             }
                                         </Card.Content>
                                     </Card>
@@ -117,25 +190,28 @@ class User extends Component {
                             }
                         </Card.Group> : <NoDisplay type={userType} />
                 }
-                <Modal size='mini' open={open} closeOnEscape onClose={this.close}>
-                    <Modal.Header>Deactivate Selected Account?</Modal.Header>
+                <Modal dimmer='blurring' size='mini' open={open} closeOnEscape={true} closeOnDimmerClick={false} onClose={this.close}>
+                    <Modal.Header>{this.state.deactivateText} Selected Account?</Modal.Header>
                     <Modal.Content>
-                        <Grid>
-                            <Grid.Row columns={2}>
-                                <Grid.Column width={4}>
+                        <Grid centered>
+                            <Grid.Row>
+                                <Grid.Column width={6} style={{ padding: '0' }}>
                                     {
-                                        (this.state.selectedUserImage) !== '' ? <Image size='tiny' src={this.state.selectedUserImage} /> :
+                                        (this.state.selectedUserImage) !== '' ? <Image size='large' src={this.state.selectedUserImage} /> :
                                             <Icon size='huge' name='user' />
                                     }
                                 </Grid.Column>
-                                <Grid.Column width={12}>
+                                <Grid.Column width={9}>
                                     <Item>
                                         <Item.Content>
                                             <Item.Header as='a'>{this.state.selectedUserFirstname} {this.state.selectedUserLastname}</Item.Header>
                                             <Item.Meta>{this.state.selectedUserEmail}</Item.Meta>
-                                            <Item.Extra>
-                                                <Rating icon='star' defaultRating={this.state.selectedUserRating} maxRating={5} disabled />
-                                            </Item.Extra>
+                                            {
+                                                (this.state.selectedUserType) === 'Customer' ? null :
+                                                    <Item.Extra>
+                                                        <Rating icon='star' defaultRating={this.state.selectedUserRating} maxRating={5} disabled />
+                                                    </Item.Extra>
+                                            }
                                         </Item.Content>
                                     </Item>
                                 </Grid.Column>
@@ -143,9 +219,18 @@ class User extends Component {
                         </Grid>
                     </Modal.Content>
                     <Modal.Actions>
-                        <Button onClick={this.close} negative content='No' />
-                        <Button onClick={this.close} positive content='Yes' />
+                        <Button color='red' inverted onClick={this.close} >
+                            <Icon name='remove' /> No
+                    </Button>
+                        <Button color='green' inverted onClick={this.deactivateAccount} >
+                            <Icon name='checkmark' /> Yes
+                    </Button>
                     </Modal.Actions>
+                </Modal>
+                <Modal dimmer='blurring' basic open={openLoading} closeOnEscape={false} closeOnDimmerClick={false} onClose={this.closeLoading} >
+                    <Modal.Content>
+                        <Loader size='large' />
+                    </Modal.Content>
                 </Modal>
             </Fragment>
         )

@@ -51,7 +51,7 @@ class Users extends Component {
                 ),
                 render: () => (
                     <Tab.Pane style={{ padding: '2em', minHeight: 370 }}>
-                        <User userType='Service Providers' cards={this.state.serviceProviders} />
+                        <User action={this.getAllServiceProviders} userType='Service Providers' cards={this.state.serviceProviders} />
                     </Tab.Pane>
                 )
             },
@@ -63,7 +63,7 @@ class Users extends Component {
                 ),
                 render: () => (
                     <Tab.Pane style={{ padding: '2em', minHeight: 370 }}>
-                        <User userType='Customers' cards={this.state.customers} />
+                        <User action={this.getAllCustomers} userType='Customers' cards={this.state.customers} />
                     </Tab.Pane>
                 )
             }
