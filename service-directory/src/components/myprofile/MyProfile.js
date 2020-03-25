@@ -7,14 +7,14 @@ class MyProfile extends Component {
     constructor(props) {
         super(props)
         this.state = {
-            firstname: this.props.userData.firstname,
-            lastname: this.props.userData.lastname,
-            email: this.props.userData.email,
-            image: this.props.userData.image,
-            type: this.props.userData.type,
-            oldPassword: '',
-            confirmPassword: '',
-            newPassword: '',
+            firstname: sessionStorage.getItem('firstname'),
+            lastname: sessionStorage.getItem('lastname'),
+            email: sessionStorage.getItem('email'),
+            image: sessionStorage.getItem('image'),
+            type: sessionStorage.getItem('type'),
+            oldpassword: '',
+            confirmpassword: '',
+            newpassword: '',
             profilePictureChanged: false,
             profilePictureUpload: false,
             profilePictureUpdateError: true,
@@ -24,21 +24,15 @@ class MyProfile extends Component {
         }
         this.onPersonalInformationChange = this.onPersonalInformationChange.bind(this)
         this.triggerSelectProfilePicture = this.triggerSelectProfilePicture.bind(this)
-        this.deleteAccount = this.deleteAccount.bind(this)
         this.onProfilePictureSelected = this.onProfilePictureSelected.bind(this)
         this.cancelProfilePictureUpdate = this.cancelProfilePictureUpdate.bind(this)
         this.saveProfilePictureUpdate = this.saveProfilePictureUpdate.bind(this)
-    }
-
-    componentDidMount() {
+        this.savePasswordUpdate = this.savePasswordUpdate.bind(this)
     }
 
     onPersonalInformationChange = event => this.setState({ [event.target.name]: event.target.value, personalInformationLoading: '' })
     onPasswordChange = event => this.setState({ [event.target.name]: event.target.value, passwordLoading: '' })
-    triggerSelectProfilePicture = () => {
-        this.profilePictureInput.click()
-        this.setState({ profilePictureUpdateError: false })
-    }
+    triggerSelectProfilePicture = () => this.profilePictureInput.click()
 
     onProfilePictureSelected = event => {
         var reader = new FileReader()
@@ -48,22 +42,6 @@ class MyProfile extends Component {
     }
 
     cancelProfilePictureUpdate = () => this.setState({ image: undefined, profilePictureChanged: false })
-    deleteAccount = () => {
-        let _id = sessionStorage.getItem('_id')
-        if (_id) {
-            let deleted = true
-            axios
-                .put(window.$endpoint + '/api/deleteuser', { _id, deleted }, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
-                .then(res => {
-                    if (res.data) {
-                        setTimeout(() => {
-                            console.log(res.data)
-                        }, 2000)
-                    }
-                })
-        }
-    }
-
     saveProfilePictureUpdate = () => {
         let _id = sessionStorage.getItem('_id')
         let { image } = this.state
@@ -76,6 +54,8 @@ class MyProfile extends Component {
                         setTimeout(() => {
                             if (res.data.success) {
                                 sessionStorage.setItem('image', res.data.data)
+                                this.setState({ image: res.data.data })
+                                this.props.action()
                             } else {
                                 this.setState({ updateErrorTitle: res.data.message, profilePictureUpdateError: false })
                             }
@@ -94,7 +74,6 @@ class MyProfile extends Component {
             axios
                 .put(window.$endpoint + '/api/personalinformation', { _id, firstname, lastname, email }, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
                 .then(res => {
-                    console.log(res.data)
                     if (res.data) {
                         setTimeout(() => {
                             if (res.data.success) {
@@ -112,88 +91,88 @@ class MyProfile extends Component {
         }
     }
 
+    savePasswordUpdate = () => {
+        let userid = sessionStorage.getItem('_id')
+        let { oldpassword, confirmpassword, newpassword } = this.state
+        if (userid && oldpassword && confirmpassword && newpassword) {
+            this.setState({ passwordLoading: 'loading' })
+            if (oldpassword !== confirmpassword) {
+                this.setState({ passwordLoading: 'error', updateErrorTitle: 'Tne Confirm Password confirmation does not match.' })
+            }
+            else if (oldpassword === newpassword) {
+                this.setState({ passwordLoading: 'error', updateErrorTitle: 'Your New Password cannot be the same as your current password.' })
+            } else {
+                axios
+                    .put(window.$endpoint + '/api/updatepassword', { userid, oldpassword, newpassword }, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+                    .then(res => {
+                        if (res.data) {
+                            setTimeout(() => {
+                                if (res.data.success) {
+                                    this.setState({ passwordLoading: 'success' })
+                                } else {
+                                    this.setState({ passwordLoading: 'error' })
+                                }
+                                this.setState({ updateErrorTitle: res.data.message })
+                            }, 2000)
+                        }
+                    })
+            }
+        }
+    }
+
     render() {
 
-        const { firstname, lastname, email, image, type } = this.state
+        let { image, type } = this.state
 
         return (
             <Segment style={{ minHeight: 420 }}>
                 <Label size='huge' color='blue' content='My Profile' icon='address card outline' ribbon />
                 <Grid columns={3} divided style={{ paddingLeft: '2em', paddingRight: '2em' }}>
-                    <Grid.Row stretched>
+                    <Grid.Row>
                         <Grid.Column width={5}>
-                            {
-                                (type).toLowerCase() === 'admin' ?
-                                    <div>
-                                        <Segment loading={this.state.profilePictureUpload} textAlign='center' style={{ padding: '0.5em', marginTop: '1em' }}>
-                                            <Message negative hidden={this.state.profilePictureUpdateError} header={this.state.updateErrorTitle} content='Please try again later.' />
-                                            {
-                                                (image) !== undefined ?
-                                                    <div>
-                                                        <Image fluid rounded src={image} bordered />
-                                                        {
-                                                            (this.state.profilePictureChanged) === true ?
-                                                                <Button.Group attached>
-                                                                    <Button onClick={this.cancelProfilePictureUpdate}>Cancel</Button>
-                                                                    <Button.Or />
-                                                                    <Button color='blue' onClick={this.saveProfilePictureUpdate}>Update</Button>
-                                                                </Button.Group> : null
-                                                        }
-                                                    </div> :
-                                                    <Icon size='massive' circular name='user' />
-                                            }
-                                            <Divider style={{ marginBottom: '0em' }} />
-                                            <div style={{
-                                                position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column'
-                                            }}>
-                                                <Button fluid icon labelPosition='left' style={{ marginTop: '0.5em' }} onClick={this.triggerSelectProfilePicture}>
-                                                    <Icon name='pencil alternate' />Change Profle Picture
-                                                </Button>
-                                                <input ref={profilePictureInput => this.profilePictureInput = profilePictureInput} type='file' accept='image/*'
-                                                    onChange={this.onProfilePictureSelected} style={{ opacity: '0', position: 'absolute', zIndex: '-1' }} />
-                                            </div>
-                                        </Segment>
-                                    </div> :
-                                    <div>
-                                        <Grid.Row>
-                                            <Grid centered columns={2}>
-                                                <Grid.Row style={{ paddingTop: '1.5em', paddingBottom: '0em' }} verticalAlign='middle' centered>
-                                                    <Container textAlign='center'>
-                                                        {
-                                                            (image) !== undefined ?
-                                                                <Image style={{ margin: 'auto' }} size='small' src={image} rounded /> :
-                                                                <Icon size='huge' circular name='user' />
-                                                        }
-                                                        <Button icon labelPosition='left' style={{ marginTop: '0.5em' }}>
-                                                            <Icon name='pencil alternate' />Change Profle Picture
-                                                        </Button>
-                                                    </Container>
-                                                </Grid.Row>
+                            <div>
+                                <Segment loading={this.state.profilePictureUpload} textAlign='center' style={{ padding: '0.5em', marginTop: '1em' }}>
+                                    <Message negative hidden={this.state.profilePictureUpdateError} header={this.state.updateErrorTitle} />
+                                    {
+                                        image === '' || image === 'undefined' ?
+                                            <Icon size='massive' circular name='user' /> :
+                                            <div>
+                                                <Image fluid rounded src={image} bordered />
                                                 {
-                                                    (type).toLowerCase() === 'customer' ? <div style={{ margin: '0.5em' }} /> :
-                                                        <Grid.Row>
-                                                            <Rating size='huge' icon='star' defaultRating={0} maxRating={5} disabled />
-                                                        </Grid.Row>
+                                                    (this.state.profilePictureChanged) === true ?
+                                                        <Button.Group attached>
+                                                            <Button onClick={this.cancelProfilePictureUpdate}>Cancel</Button>
+                                                            <Button.Or />
+                                                            <Button color='blue' onClick={this.saveProfilePictureUpdate}>Update</Button>
+                                                        </Button.Group> : null
                                                 }
-                                            </Grid>
-                                        </Grid.Row>
-                                        {
-                                            (type).toLowerCase() === 'admin' ? null :
-                                                <Grid.Row>
-                                                    <Divider style={{ padding: '0em', margin: '0.5em' }} />
-                                                    <Header style={{ padding: '0em', margin: '0em' }} as='h3' color='red'>Delete Account</Header>
-                                                    <Header style={{ marginTop: '0.5em' }} as='h5'>Once you delete your {type} account, there is no going back. Please be certain.</Header>
-                                                    <Label size='large' color='red' as='a' basic onClick={this.deleteAccount} style={{ fontWeight: 'normal', marginTop: '0.3em' }}>Delete your account</Label>
-                                                </Grid.Row>
-                                        }
+                                            </div>
+
+                                    }
+                                    <Divider style={{ marginBottom: '0em' }} />
+                                    <div style={{
+                                        position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column'
+                                    }}>
+                                        <Button fluid icon labelPosition='left' style={{ marginTop: '0.5em' }} onClick={this.triggerSelectProfilePicture}>
+                                            <Icon name='pencil alternate' />Change Profle Picture
+                                                </Button>
+                                        <input ref={profilePictureInput => this.profilePictureInput = profilePictureInput} type='file' accept='image/*'
+                                            onChange={this.onProfilePictureSelected} style={{ opacity: '0', position: 'absolute', zIndex: '-1' }} />
                                     </div>
-                            }
+                                </Segment>
+                                {
+                                    (type).toLowerCase() === 'customer' ? <div style={{ margin: '0.5em' }} /> :
+                                        <Container textAlign='center'>
+                                            <Rating size='massive' icon='star' defaultRating={0} maxRating={5} disabled />
+                                        </Container>
+                                }
+                            </div>
                         </Grid.Column>
                         <Grid.Column width={6}>
                             <Header as='h1'>Change Personal Information</Header>
                             <Form className={this.state.personalInformationLoading}>
                                 <Message success header={this.state.updateErrorTitle} />
-                                <Message error header={this.state.updateErrorTitle} content='Please try again later.' />
+                                <Message error header={this.state.updateErrorTitle} />
                                 <Form.Input
                                     label='Email'
                                     required
@@ -201,8 +180,7 @@ class MyProfile extends Component {
                                     name='email'
                                     onChange={this.onPersonalInformationChange}
                                     value={this.state.email}
-                                    placeholder='Email'
-                                    defaultValue={email} />
+                                    placeholder='Email' />
                                 <Form.Input
                                     label='Firt name'
                                     required
@@ -210,8 +188,7 @@ class MyProfile extends Component {
                                     name='firstname'
                                     onChange={this.onPersonalInformationChange}
                                     value={this.state.firstname}
-                                    placeholder='First name'
-                                    defaultValue={firstname} />
+                                    placeholder='First name' />
                                 <Form.Input
                                     label='Last name'
                                     required
@@ -219,8 +196,7 @@ class MyProfile extends Component {
                                     name='lastname'
                                     onChange={this.onPersonalInformationChange}
                                     value={this.state.lastname}
-                                    placeholder='Last name'
-                                    defaultValue={lastname} />
+                                    placeholder='Last name' />
                                 <Form.Button color='blue' onClick={this.savePersonalInformationUpdate} >Update</Form.Button>
                             </Form>
                         </Grid.Column>
@@ -228,32 +204,32 @@ class MyProfile extends Component {
                             <Header as='h1'>Change Password</Header>
                             <Form className={this.state.passwordLoading}>
                                 <Message success header={this.state.updateErrorTitle} />
-                                <Message error header={this.state.updateErrorTitle} content='Please try again later.' />
+                                <Message error header={this.state.updateErrorTitle} />
                                 <Form.Input
-                                    label='Old password'
+                                    label='Current password'
                                     required
                                     type='password'
-                                    name='old password'
-                                    placeholder='Old password'
+                                    name='oldpassword'
+                                    placeholder='Current password'
                                     onChange={this.onPasswordChange}
-                                    value={this.state.oldPassword} />
+                                    value={this.state.oldpassword} />
                                 <Form.Input
                                     label='Confirm password'
                                     required
                                     type='password'
-                                    name='confirm password'
+                                    name='confirmpassword'
                                     placeholder='Confirm password'
                                     onChange={this.onPasswordChange}
-                                    value={this.state.confirmPassword} />
+                                    value={this.state.confirmpassword} />
                                 <Form.Input
                                     label='New password'
                                     required
                                     type='password'
-                                    name='new password'
+                                    name='newpassword'
                                     placeholder='New password'
                                     onChange={this.onPasswordChange}
-                                    value={this.state.newPassword} />
-                                <Form.Button color='blue' >Update</Form.Button>
+                                    value={this.state.newpassword} />
+                                <Form.Button color='blue' onClick={this.savePasswordUpdate} >Update</Form.Button>
                             </Form>
                         </Grid.Column>
                     </Grid.Row>

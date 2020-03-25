@@ -22,5 +22,6 @@ func Router() *mux.Router {
 	router.HandleFunc("/api/otherservices", middleware.GetAllOtherServices).Methods("GET", "OPTIONS")
 	router.HandleFunc("/api/profilepicture", middleware.UpdateProfilePicture).Methods("PUT", "OPTIONS")
 	router.HandleFunc("/api/personalinformation", middleware.UpdatePersonalInformation).Methods("PUT", "OPTIONS")
+	router.HandleFunc("/api/updatepassword", middleware.UpdatePassword).Methods("PUT", "OPTIONS")
 	return router
 }

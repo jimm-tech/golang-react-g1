@@ -58,7 +58,7 @@ type UserCredential struct {
 }
 
 type UserPassword struct {
-	UserID primitive.ObjectID `json:"userid,omitempty" bson:"userid,omitempty"`
-	Old    string             `json:"old,omitempty"`
-	New    string             `json:"new,omitempty"`
+	UserID      primitive.ObjectID `json:"userid,omitempty" bson:"userid,omitempty"`
+	OldPassword string             `json:"oldpassword,omitempty"`
+	NewPassword string             `json:"newpassword,omitempty"`
 }

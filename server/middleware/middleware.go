@@ -422,8 +422,8 @@ func updatePassword(userPassword models.UserPassword) models.ServerResponse {
 	filter := bson.M{"_id": bson.M{"$eq": userPassword.UserID}}
 	var result models.User
 	_ = usersCollection.FindOne(context.Background(), filter).Decode(&result)
-	if result.Password == userPassword.Old {
-		update := bson.M{"$set": bson.M{"password": userPassword.New}}
+	if result.Password == userPassword.OldPassword {
+		update := bson.M{"$set": bson.M{"password": userPassword.NewPassword}}
 		response := updateOneQuery(usersCollection, filter, update)
 		if response.Success {
 			var result models.User
@@ -435,7 +435,7 @@ func updatePassword(userPassword models.UserPassword) models.ServerResponse {
 	}
 	var response models.ServerResponse
 	response.Success = false
-	response.Message = "Entered incorrect password."
+	response.Message = "Your old password appears to be incorrect."
 	return response
 }
 

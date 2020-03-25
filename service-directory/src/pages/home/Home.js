@@ -22,6 +22,7 @@ class Home extends React.Component {
         this.clearDetails = this.clearDetails.bind(this)
         this.signOutAccount = this.signOutAccount.bind(this)
         this.handleItemClick = this.handleItemClick.bind(this)
+        this.updateAvatar = this.updateAvatar.bind(this)
         this.state = {
             userData: this.props.location.state ? this.props.location.state.userData : null,
             splashAnimate: true,
@@ -67,6 +68,7 @@ class Home extends React.Component {
     }
 
     handleItemClick = (e, { name }) => this.setState({ activeItem: name })
+    updateAvatar() { this.setState({ activeItem: 'myprofile' }) }
 
     render() {
 
@@ -82,7 +84,7 @@ class Home extends React.Component {
             return <Redirect to={this.state.redirect} />
         }
 
-        const { activeItem, userData } = this.state
+        const { activeItem } = this.state
 
         let menuItems
         let type = sessionStorage.getItem('type') !== null ? sessionStorage.getItem('type').toLowerCase() : ''
@@ -109,7 +111,7 @@ class Home extends React.Component {
 
         let body
         if (this.state.activeItem === 'myprofile') {
-            body = <MyProfile userData={userData} />
+            body = <MyProfile action={this.updateAvatar} />
         } else if (this.state.activeItem === 'services') {
             body = <Services />
         } else if (this.state.activeItem === 'users') {
