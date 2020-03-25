@@ -7,7 +7,7 @@ class NoDisplay extends Component {
 
         return (
             <Segment basic size='large' textAlign='center'>
-                <Header as='h1'>There is no {this.props.type} to display.</Header>
+                <Header as='h3'>There is no {this.props.type} to display.</Header>
                 <Image centered size='large' style={{ marginTop: '1.0em' }}
                     src='https://react.semantic-ui.com/images/wireframe/centered-paragraph.png'
                 />

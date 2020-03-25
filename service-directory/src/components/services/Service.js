@@ -10,6 +10,8 @@ class Service extends Component {
 
     constructor(props) {
         super(props)
+        this.show = this.show.bind(this)
+        this.close = this.close.bind(this)
         this.state = {
             loading: true,
             open: false
@@ -35,7 +37,7 @@ class Service extends Component {
     }
 
     render() {
-        const { loading, open } = this.state
+        const { loading } = this.state
         const { cards, serviceType } = this.props
 
         let cardCount = 4
