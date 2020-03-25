@@ -111,7 +111,7 @@ class Register extends React.Component {
               onChange={this.onChange}
               value={this.state.email}
               placeholder='Email'
-              width={10} />
+              width={9} />
             <Form.Field style={{ paddingTop: '2em', paddingLeft: '0', paddingRight: '0' }}>
               <Label style={{ backgroundColor: '#ffffff', padding: '0' }} size='huge' content='@' />
             </Form.Field>
@@ -122,7 +122,6 @@ class Register extends React.Component {
               onChange={this.onChange}
               value={this.state.domain}
               placeholder='Domain'
-              defaultValue={this.state.domain}
               width={3} />
             <Form.Field style={{ paddingTop: '2em', paddingLeft: '0', paddingRight: '0' }}>
               <Label style={{ backgroundColor: '#ffffff', padding: '0' }} size='huge' content='.' />
@@ -134,11 +133,9 @@ class Register extends React.Component {
               onChange={this.onChange}
               value={this.state.extension}
               placeholder='Ext'
-              defaultValue={this.state.extension}
               width={3} />
           </Form.Group>
-          <Form.Group widths='equal'>
-            <Form.Input
+          <Form.Input
               label='Password'
               required
               type='password'
@@ -146,7 +143,6 @@ class Register extends React.Component {
               onChange={this.onChange}
               value={this.state.password}
               placeholder='Password' />
-          </Form.Group>
           <Form.Group widths='equal'>
             <Form.Field >
               <Label size='large' as='a' color='blue' onClick={this.goToSignin} style={{ fontWeight: 'normal', marginTop: '0.3em' }}>
