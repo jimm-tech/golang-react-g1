@@ -77,6 +77,7 @@ class Signin extends React.Component {
         <h2>Sign In</h2>
         <p>to continue to Service Directory</p>
         <Form className={this.state.formStyle}>
+          <Message success header={this.state.messageHeader} />
           <Message error header={this.state.messageHeader} />
           <Form.Input
             label='Email'

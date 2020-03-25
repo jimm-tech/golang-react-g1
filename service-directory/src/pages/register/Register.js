@@ -1,5 +1,5 @@
 import React from 'react'
-import { Form, Image, Label } from 'semantic-ui-react'
+import { Form, Image, Label, Message } from 'semantic-ui-react'
 import logo from '../../images/logo.png'
 import axios from 'axios'
 import './Register.css'
@@ -23,6 +23,7 @@ class Register extends React.Component {
       password: '',
       firstname: '',
       lastname: '',
+      messageHeader: '',
       type: this.props.name
     }
   }
@@ -35,6 +36,7 @@ class Register extends React.Component {
     password: '',
     firstname: '',
     lastname: '',
+    messageHeader: '',
     type: this.props.name,
   })
 
@@ -44,6 +46,7 @@ class Register extends React.Component {
     } else {
       this.setState({ [event.target.name]: event.target.value.replace(/[^\w.\s]/gi, "") })
     }
+    this.setState({ formStyle: '' })
   }
   goToWelcome = () => this.setState({ redirect: '/' })
   goToSignin = () => this.setState({ redirect: '/signin' })
@@ -58,8 +61,12 @@ class Register extends React.Component {
           { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
         .then(res => {
           setTimeout(() => {
-            this.setState({ formStyle: '', isSuccess: true })
-            this.goToSignin()
+            if (res.data.success) {
+              this.setState({ formStyle: '', isSuccess: true })
+              this.goToSignin()
+            } else {
+              this.state({ formStyle: 'error', messageHeader: res.data.message })
+            }
           }, 2000)
         })
     }
@@ -81,6 +88,7 @@ class Register extends React.Component {
         <h2>Create your MNM {this.props.name} Account</h2>
         <p>to continue to Service Directory</p>
         <Form className={this.state.formStyle}>
+          <Message error header={this.state.messageHeader} />
           <Form.Group widths='equal'>
             <Form.Input
               label='Firt name'
@@ -136,13 +144,13 @@ class Register extends React.Component {
               width={3} />
           </Form.Group>
           <Form.Input
-              label='Password'
-              required
-              type='password'
-              name='password'
-              onChange={this.onChange}
-              value={this.state.password}
-              placeholder='Password' />
+            label='Password'
+            required
+            type='password'
+            name='password'
+            onChange={this.onChange}
+            value={this.state.password}
+            placeholder='Password' />
           <Form.Group widths='equal'>
             <Form.Field >
               <Label size='large' as='a' color='blue' onClick={this.goToSignin} style={{ fontWeight: 'normal', marginTop: '0.3em' }}>

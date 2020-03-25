@@ -151,8 +151,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	var user models.User
 	_ = json.NewDecoder(r.Body).Decode(&user)
-	createUser(user)
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(createUser(user))
 }
 
 // CreateService create service route
@@ -163,8 +162,7 @@ func CreateService(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	var service models.Service
 	_ = json.NewDecoder(r.Body).Decode(&service)
-	createService(service)
-	json.NewEncoder(w).Encode(service)
+	json.NewEncoder(w).Encode(createService(service))
 }
 
 // LoginUser login user route
@@ -474,24 +472,32 @@ func updatePersonalInformation(user models.User) models.ServerResponse {
 }
 
 // Create one user in the DB
-func createUser(user models.User) {
+func createUser(user models.User) models.ServerResponse {
 	insertResult, err := usersCollection.InsertOne(context.Background(), user)
-	if err != nil {
-		fmt.Println("Error: ", err)
-	}
-	fmt.Println("User created: ", insertResult.InsertedID)
+	return insertOneQuery(insertResult, err)
 }
 
 // Create one service in the DB
-func createService(service models.Service) {
+func createService(service models.Service) models.ServerResponse {
 	insertResult, err := servicesCollection.InsertOne(context.Background(), service)
-	if err != nil {
-		fmt.Println("Error: ", err)
-	}
-	fmt.Println("Service created: ", insertResult.InsertedID)
+	return insertOneQuery(insertResult, err)
 }
 
 //
+func insertOneQuery(cur *mongo.InsertOneResult, err error) models.ServerResponse {
+	var response models.ServerResponse
+	if err != nil {
+		fmt.Println("Error: ", err)
+		response.Success = false
+		response.Message = "Something went wrong."
+		return response
+	}
+	fmt.Println("Service created: ", cur.InsertedID)
+	response.Success = true
+	response.Message = "Successfully created."
+	return response
+}
+
 func selectAllQuery(cur *mongo.Cursor) []primitive.M {
 	var results []primitive.M
 	for cur.Next(context.Background()) {
