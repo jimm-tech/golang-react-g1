@@ -80,11 +80,11 @@ class MyProfile extends Component {
                                 sessionStorage.setItem('email', res.data.userdata.email)
                                 sessionStorage.setItem('firstname', res.data.userdata.firstname)
                                 sessionStorage.setItem('lastname', res.data.userdata.lastname)
-                                this.setState({ personalInformationLoading: 'success' })
+                                this.setState({ personalInformationLoading: 'success', updateErrorTitle: res.data.message })
+                                this.props.action()
                             } else {
-                                this.setState({ personalInformationLoading: 'error' })
+                                this.setState({ personalInformationLoading: 'error', updateErrorTitle: res.data.message })
                             }
-                            this.setState({ updateErrorTitle: res.data.message })
                         }, 2000)
                     }
                 })
@@ -109,10 +109,12 @@ class MyProfile extends Component {
                             setTimeout(() => {
                                 if (res.data.success) {
                                     this.setState({ passwordLoading: 'success' })
+                                    this.setState({ updateErrorTitle: res.data.message })
+                                    this.props.action()
                                 } else {
                                     this.setState({ passwordLoading: 'error' })
+                                    this.setState({ updateErrorTitle: res.data.message })
                                 }
-                                this.setState({ updateErrorTitle: res.data.message })
                             }, 2000)
                         }
                     })
